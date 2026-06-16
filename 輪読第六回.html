@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>次元圧縮（PCA・MDS・t-SNE）解説</title>
+
+<style>
+body{
+    font-family: "Yu Gothic", sans-serif;
+    line-height: 1.8;
+    margin: 0;
+    background: #f5f7fa;
+    color: #333;
+}
+
+header{
+    background: #1f4e79;
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+main{
+    max-width: 1000px;
+    margin: auto;
+    padding: 20px;
+}
+
+section{
+    background: white;
+    margin: 20px 0;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+h2{
+    color: #1f4e79;
+    border-left: 6px solid #1f4e79;
+    padding-left: 10px;
+}
+
+table{
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td{
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+}
+
+th{
+    background: #e8eef7;
+}
+
+.figure{
+    background: #f0f4f8;
+    padding: 15px;
+    border-left: 5px solid #4a90e2;
+    margin-top: 15px;
+}
+
+.note{
+    background: #fff8dc;
+    padding: 15px;
+    border-left: 5px solid orange;
+}
+
+footer{
+    text-align: center;
+    padding: 20px;
+    background: #1f4e79;
+    color: white;
+}
+.code-block{
+    background:#1e1e1e;
+    color:#d4d4d4;
+    padding:20px;
+    border-radius:10px;
+    overflow-x:auto;
+    font-family:Consolas, monospace;
+    line-height:1.6;
+}
+.explanation{
+    background:#f5f7fa;
+    border-left:5px solid #2c7be5;
+    padding:15px;
+    margin-top:15px;
+}
+
+.keyword{color:#569cd6;}
+.module{color:#4ec9b0;}
+.string{color:#ce9178;}
+.comment{color:#6a9955;}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>第4章 次元圧縮（Dimensionality Reduction）</h1>
+<p>PCA・MDS・t-SNEによる高次元データの可視化</p>
+</header>
+
+<main>
+
+<section>
+<h2>1. この章の目的</h2>
+
+<p>
+本章では15次元の説明変数を持ち、それぞれの変数が何を表すか理解の難しい炭素結晶構造データを
+次元圧縮を用いて2次元へ変換し、データの特徴を可視化します。
+</p>
+<h3>次元圧縮法</h3>
+
+<ul>
+<li>PCA（主成分分析）</li>
+<li>MDS（多次元尺度構成法）</li>
+<li>t-SNE</li>
+</ul>
+
+</section>
+
+<section>
+
+<h2>2. 使用データ</h2>
+
+<h3>炭素原子環境データ</h3>
+
+<table>
+<tr>
+<th>項目</th>
+<th>値</th>
+</tr>
+
+<tr>
+<td>データ数</td>
+<td>144</td>
+</tr>
+
+<tr>
+<td>説明変数数</td>
+<td>15</td>
+</tr>
+</table>
+
+<h3>ラベル分類</h3>
+
+<table>
+<tr>
+<th>ラベル</th>
+<th>意味</th>
+</tr>
+
+<tr>
+<td>sp</td>
+<td>sp結合</td>
+</tr>
+
+<tr>
+<td>sp2</td>
+<td>sp²結合</td>
+</tr>
+
+<tr>
+<td>sp2_edge</td>
+<td>グラフェン端部</td>
+</tr>
+
+<tr>
+<td>sp2_tube</td>
+<td>ナノチューブ</td>
+</tr>
+
+<tr>
+<td>sp3</td>
+<td>sp³結合</td>
+</tr>
+
+</table>
+<p>これらのデータを読み込み、説明変数名カラム名、ラベルカラム名を設定し、StandardScalerを用いて標準化してから次元圧縮を行う。</p>
+</section>
+
+<section>
+
+<h2>3. PCA（主成分分析）</h2>
+
+<p>
+PCAはデータのばらつきが最も大きい方向を探し、
+情報をできるだけ失わずに次元を削減する手法です。
+</p>
+<h3>PCAの特徴</h3>
+
+<ul>
+<li>線形な次元圧縮手法</li>
+<li>情報量（分散）を最大限保持する</li>
+<li>計算が高速</li>
+<li>結果の解釈が比較的しやすい</li>
+</ul>
+<div class="figure">
+<h3>図4.15 寄与率と累積寄与率</h3>
+<pre class="code-block"><code>
+from sklearn.decomposition import PCA
+
+ndim = X.shape[1]
+
+pca = PCA(ndim)
+
+pca.fit(X)
+indx = [i for i in range(
+    1,
+    len(pca.explained_variance_ratio_)+1
+)]
+
+pcasum = [
+    np.sum(
+        pca.explained_variance_ratio_[:i]
+    )
+    for i in range(
+        len(pca.explained_variance_ratio_)
+    )
+]
+</code></pre>
+<ul>
+<li>第1主成分：約80%</li>
+<li>第2主成分まで：約90%</li>
+</ul>
+ <img
+    src="fig15.png"
+    alt="寄与率と累積寄与率"
+    class="figure">
+<p>
+2つの主成分だけで元の15次元データの大部分を説明できます。
+</p>
+</div>
+
+<div class="figure">
+<h3>図4.16 PCAによる可視化</h3>
+<pre class="code-block"><code>
+ndim = 2
+
+pca = PCA(ndim)
+
+pca.fit(X)
+
+X_rd = pca.transform(X)
+
+X_rd_new = pca.transform(X_new)
+from dimerd_misc import scatterplot_rd
+
+scatterplot_rd(
+    X_rd,
+    df_obs[SPLABEL].values,
+    X_rd_new
+)
+</code></pre>
+<div class="explanation">
+
+<h3>コード解説</h3>
+
+<ul>
+
+<li>
+<b>PCA(n_components=2)</b><br>
+15次元のデータを2次元へ圧縮するPCAモデルを作成します。
+</li>
+
+<li>
+<b>fit(X)</b><br>
+データの分散構造を学習し、
+主成分軸を求めます。
+</li>
+
+<li>
+<b>transform(X)</b><br>
+元の15次元データを
+主成分空間へ変換します。
+</li>
+
+<li>
+<b>X_rd</b><br>
+圧縮後の2次元データです。
+</li>
+
+
+</ul>
+
+</div>
+ <img
+    src="fig16.png"
+    alt="PCA次元圧縮説明変数分布"
+    class="figure">
+<p>第1主成分と第2主成分を用いて
+15次元データを2次元に変換した結果です。
+</p>
+
+<p>
+sp3、sp2、sp2_tubeなどのグループが
+ある程度まとまって見えます。
+</p>
+
+</div>
+
+</section>
+
+
+<section>
+
+<h2>4. MDS（多次元尺度構成法）</h2>
+
+<p>
+MDSは元の高次元空間における
+データ同士の距離をできるだけ保存しながら
+低次元化する方法です。
+</p>
+<h3>MDSの特徴</h3>
+
+<ul>
+<li>データ間距離を保存する</li>
+<li>類似データが近くに配置される</li>
+<li>PCAより柔軟な可視化が可能</li>
+<li>計算量はPCAより大きい</li>
+</ul>
+<div class="figure">
+<pre class="code-block"><code>
+from sklearn.manifold import MDS
+
+mds = MDS(ndim, random_state=1)
+
+X_mds = mds.fit_transform(X)
+
+scatterplot_rd(
+    X_mds,
+    df_obs[SPLABEL].values
+)
+</code></pre>
+<h3>コード解説</h3>
+
+<ul>
+
+<li>
+<b>MDS()</b><br>
+MDSモデルを作成します。
+</li>
+
+<li>
+<b>n_components=2</b><br>
+2次元へ圧縮します。
+</li>
+
+<li>
+<b>random_state=1</b><br>
+乱数を固定し、
+毎回同じ結果になるようにします。
+</li>
+
+<li>
+<b>fit_transform(X)</b><br>
+学習と次元圧縮を同時に行います。
+</li>
+
+<li>
+<b>X_mds</b><br>
+MDSで変換された2次元座標です。
+</li>
+
+
+</ul>
+<h3>図4.17 MDS結果</h3>
+
+
+ <img
+    src="fig17.png"
+    alt="MDS圧縮説明変数分布"
+    class="figure">
+</div>
+<p>
+距離の近いデータは近くに配置されます。
+ランダムシードによって見え方が多少変化します。
+</p>
+</section>
+
+<section>
+
+<h2>5. t-SNE</h2>
+
+<p>
+t-SNEはクラスタ構造の発見が得意な
+非線形次元圧縮手法です。
+</p>
+<p>
+近傍データの関係を重視して
+低次元へ変換します。
+</p>
+<h3>t-SNEの特徴</h3>
+<ul>
+<li>クラスタ分離が得意</li>
+<li>perplexityに依存する</li>
+<li>結果が変わりやすい</li>
+</ul>
+<div class="figure">
+
+
+
+
+<pre class="code-block"><code>
+from sklearn.manifold import TSNE
+
+tsne = TSNE(
+    n_components=2,
+    perplexity=30,
+    random_state=1
+)
+
+X_tsne = tsne.fit_transform(X)
+
+scatterplot_rd(
+    X_tsne,
+    df_obs[SPLABEL].values
+)
+</code></pre>
+<div class="explanation">
+
+<h3>コード解説</h3>
+
+<ul>
+
+<li>
+<b>TSNE()</b><br>
+t-SNEモデルを作成します。
+</li>
+
+<li>
+<b>n_components=2</b><br>
+2次元へ圧縮します。
+</li>
+
+<li>
+<b>perplexity=30</b><br>
+近傍データをどの程度重視するかを決めるパラメータです。
+</li>
+
+<li>
+<b>random_state=1</b><br>
+乱数シードを固定して再現性を確保します。
+</li>
+
+<li>
+<b>fit_transform()</b><br>
+学習と次元圧縮を同時に実行します。
+</li>
+
+
+</ul>
+
+</div>
+<h3>図4.18 t-SNE結果</h3>
+ <img
+    src="fig18.png"
+    alt="tSNE圧縮説明変数分布"
+    class="figure">
+</div>
+
+</section>
+
+<section>
+
+<h2>6. PCA演習問題</h2>
+
+<h3>問題内容</h3>
+
+<ol>
+<li>データを散布図表示する</li>
+<li>PCAを適用する</li>
+<li>変換後を可視化する</li>
+<li>目的変数との関係を考察する</li>
+</ol>
+
+<div class="figure">
+
+<h3>図4.19</h3>
+ <img
+    src="fig19.png"
+    alt="問一解"
+    class="figure">
+
+<p>
+PCA後の短軸方向に
+目的変数yの変化が現れている例です。
+</p>
+
+</div>
+
+<div class="note">
+
+<strong>重要ポイント</strong>
+
+<p>
+寄与率が大きい主成分が、
+必ずしも予測に重要とは限りません。
+</p>
+
+</div>
+
+</section>
+
+<section>
+
+<h2>7. PCA利用時の注意点</h2>
+
+<div class="figure">
+
+<h3>図4.20</h3>
+ <img
+    src="fig20.png"
+    alt="問二解"
+width="600"
+height="350"
+    class="figure">
+<p>
+元の説明変数（x1, x2）には物理的意味がありますが、
+PCAで作られた主成分軸には
+必ずしも明確な意味がありません。
+</p>
+
+</div>
+
+<div class="note">
+
+<strong>結論</strong>
+
+<p>
+PCAはデータ圧縮には便利ですが、
+圧縮後の軸の解釈には注意が必要です。
+</p>
+
+</div>
+
+</section>
+
+<section>
+
+<h2>8. まとめ</h2>
+
+<table>
+
+<tr>
+<th>手法</th>
+<th>特徴</th>
+</tr>
+
+<tr>
+<td>PCA</td>
+<td>情報量を保ちながら圧縮</td>
+</tr>
+
+<tr>
+<td>MDS</td>
+<td>距離関係を保存</td>
+</tr>
+
+<tr>
+<td>t-SNE</td>
+<td>クラスタ発見が得意</td>
+</tr>
+
+</table>
+
+<p>
+高次元データを2次元へ変換することで、
+データの構造や特徴を視覚的に理解できます。
+</p>
+
+</section>
+
+</main>
+
+<footer>
+機械学習 第4章 次元圧縮 解説ページ
+</footer>
+
+</body>
+</html>
