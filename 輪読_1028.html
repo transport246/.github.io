@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6.2.1 解説 - 頻出パターンマイニング</title>
+    <!-- 数式表示用のMathJaxライブラリ -->
+    <script src="https://polyfill.io"></script>
+    <script id="MathJax-script" async src="https://jsdelivr.net"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --background-color: #f8f9fa;
+            --text-color: #333;
+            --border-color: #ddd;
+        }
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            line-height: 1.8;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 30px;
+            background: #fff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-radius: 8px;
+        }
+        h3 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 8px;
+            font-size: 1.5rem;
+            margin-top: 0;
+        }
+        h4 {
+            color: var(--secondary-color);
+            font-size: 1.2rem;
+            margin-top: 30px;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 10px;
+        }
+        p {
+            text-align: justify;
+            margin-bottom: 20px;
+        }
+        .table-container {
+            overflow-x: auto;
+            margin: 25px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #edf2f7;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #fcfcfc;
+        }
+        .table-title {
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+        ul {
+            padding-left: 20px;
+            margin-bottom: 20px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        .formula-block {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .footnote {
+            font-size: 0.85rem;
+            color: #666;
+            border-top: 1px solid var(--border-color);
+            padding-top: 15px;
+            margin-top: 40px;
+        }
+        .footnote p {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h3>6.2.1 解説</h3>
+    
+    <p>
+        <strong>頻出パターンマイニング</strong>はアイテムセットマイニングなどとも呼ばれます [57, 58]。データベースから検索条件として用いることができる高頻度なパターンを発見する手法です。
+    </p>
+    <p>
+        超電導転移温度 (\(T_c\)) を例に取り具体的に説明します [59]。最初に超電導が発見された水銀の \(T_c\) は 4.2K、鉛の \(T_c\) は 7.19K です。\(T_c\) は時代とともに高くなり、1990年代には 30K を超える \(T_c\) を持つ銅酸化物超電導体 \(\text{LaBaCuO}\), \(\text{LaSrCuO}\), \(\text{YBaCuO}\) などが見つかりました。21世紀に入ると更に高圧で 287K の \(T_c\) を持つ \(\text{CSH}\) 系が見つかりました。
+    </p>
+    <p>
+        このデータから物質の組成と \(T_c\) の相関を議論します。上の説明文だけから \(T_c\) を 30K より上か、そして \(T_c\) が 200K より上かで分け、化学式は元素名だけを用いて、<strong>表 6.1</strong> にまとめました<sup>1</sup>。
+    </p>
+    <p>
+        物質の組成が分からないので、残念ながら、構成元素の特徴量に平均値、標準偏差などの操作を行い物質の説明変数とすることは適切ではないでしょう。この表を単に物質の構成元素と \(T_c\) の条件式の要素（<strong>アイテム</strong>）に直します。このアイテムの集合を<strong>トランザクション</strong>と呼びます。
+    </p>
+    <p>
+        それぞれの物質に対応するトランザクション (\(T_i\)) を <strong>表 6.2</strong> に示します。条件 \(T_c > 200\) が満たされると \(T_c > 30\) も満たされるので、物質 \(\text{CSH}\) のトランザクションに \(T_c > 30\) を加えています。
+    </p>
+
+    <!-- 表 6.1 -->
+    <div class="table-container">
+        <div class="table-title">表 6.1 超電導体と \(T_c\)</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>\(T_c\)</th>
+                    <th>物質</th>
+                    <th>圧力</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>\(T_c < 30\)</td>
+                    <td>\(\text{Hg}\)</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>\(T_c < 30\)</td>
+                    <td>\(\text{Pb}\)</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>\(T_c > 30\)</td>
+                    <td>\(\text{LaBaCuO}\)</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>\(T_c > 30\)</td>
+                    <td>\(\text{LaSrCuO}\)</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>\(T_c > 30\)</td>
+                    <td>\(\text{YBaCuO}\)</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>\(T_c > 200\)</td>
+                    <td>\(\text{CSH}\)</td>
+                    <td>高圧</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 表 6.2 -->
+    <div class="table-container">
+        <div class="table-title">表 6.2 超電導体と \(T_c\) のトランザクション</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>トランザクション</th>
+                    <th>アイテム</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>\(T_1\)</td>
+                    <td>\(T_c < 30\), \(\text{Hg}\)</td>
+                </tr>
+                <tr>
+                    <td>\(T_2\)</td>
+                    <td>\(T_c < 30\), \(\text{Pb}\)</td>
+                </tr>
+                <tr>
+                    <td>\(T_3\)</td>
+                    <td>\(T_c > 30\), \(\text{La}\), \(\text{Ba}\), \(\text{Cu}\), \(\text{O}\)</td>
+                </tr>
+                <tr>
+                    <td>\(T_4\)</td>
+                    <td>\(T_c > 30\), \(\text{La}\), \(\text{Sr}\), \(\text{Cu}\), \(\text{O}\)</td>
+                </tr>
+                <tr>
+                    <td>\(T_5\)</td>
+                    <td>\(T_c > 30\), \(\text{Y}\), \(\text{Ba}\), \(\text{Cu}\), \(\text{O}\)</td>
+                </tr>
+                <tr>
+                    <td>\(T_6\)</td>
+                    <td>\(T_c > 30\), \(T_c > 200\), \(\text{C}\), \(\text{S}\), \(\text{H}\), 高圧</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p>
+        アイテム群も各物質に対してスパースな表現になっています。この場合によく用いられるのが、頻出集合や相関ルールと呼ばれる規則を求める頻出パターンマイニングと呼ばれる手法です。
+    </p>
+    <p>
+        例えば、このデータベースの頻出集合は、\(\{T_c > 30\}\) が 4 件、\(\{T_c > 30, \text{Cu}, \text{O}\}\) が 3 件あります<sup>2</sup>。更に、相関ルールでは、「\(X\) が起これば \(Y\) が起こる頻度が高い」ことを次の形式で表します：
+    </p>
+
+    <div class="formula-block">
+        \(X \Rightarrow Y\)
+    </div>
+
+    <p>
+        ここで、\(X\) と \(Y\) は同じアイテムを含まない集合で、\(X\) を<strong>前提部 (antecedent)</strong>、\(Y\) を<strong>結論部 (consequent)</strong> と呼びます。このトランザクションでは、\(\text{Cu}\) と \(\text{O}\) からなる物質は 100% の頻度で \(T_c > 30\) を満たしているため、例えば、\(\{\text{Cu}, \text{O}\} \Rightarrow T_c > 30\) という相関ルールが導かれます。
+    </p>
+
+    <h4>[1] 評価指標</h4>
+    <p>
+        頻出パターンマイニングでよく用いられる評価指標には以下があります。
+    </p>
+
+    <ul>
+        <li>
+            <strong>\(\text{support}(X)\) （支持度）</strong><br>
+            \(= \text{条件 } X \text{ を満たすトランザクション数} / \text{全トランザクション数}\)
+            <br>
+            \(X = \{\text{Cu}, \text{O}\}\) の場合、\(\text{support}(X) = 3/6 = 0.6\) です。
+        </li>
+        <li>
+            <strong>\(\text{confidence}(X, Y)\) （信頼度）</strong><br>
+            \(= \text{条件 } X \text{ と } Y \text{ を共に満たすトランザクション数} / \text{条件 } X \text{ を満たすトランザクション数}\)
+            <br>
+            \(X = \{\text{Cu}, \text{O}\}\), \(Y = T_c > 30\) の場合、\(\text{confidence}(X, Y) = 3/3 = 1\) です。上の例では support, confidence ともに割合としましたが、件数とする場合もあります。
+        </li>
+    </ul>
+
+    <!-- 注釈部分 -->
+    <div class="footnote">
+        <p>1 温度を示す K を省略しました。</p>
+        <p>2 それらの部分集合 \(\{\text{Cu}, \text{O}\}\), \(\{\text{Cu}\}\), \(\{\text{O}\}\) も 3 件あります。</p>
+    </div>
+</div>
+
+</body>
+</html>
